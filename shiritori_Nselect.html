@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>しりとり対戦</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F2ECDD;
+    --paper-deep: #E7DEC7;
+    --card: #FFFDF6;
+    --sumi: #211F1B;
+    --sumi-soft: #55524A;
+    --gold: #A6813D;
+    --p1: #1F3C63;
+    --p1-soft: #E4EAF1;
+    --p2: #A83B29;
+    --p2-soft: #F3E4DF;
+    --danger: #B4291E;
+    --ok: #3C6E4F;
+    --line: rgba(33,31,27,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:var(--paper);
+    color:var(--sumi);
+    font-family:'Noto Sans JP',sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  body{
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(166,129,61,0.07), transparent 40%),
+      radial-gradient(circle at 90% 85%, rgba(31,60,99,0.06), transparent 45%);
+  }
+  h1,h2,h3,.serif{ font-family:'Noto Serif JP',serif; }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  .screen{
+    display:none;
+    flex-direction:column;
+    flex:1;
+    padding:28px 22px 24px;
+    animation:fadeIn .35s ease;
+  }
+  .screen.active{ display:flex; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- タイトル画面 ---------- */
+  .brand{
+    text-align:center;
+    margin-bottom:8px;
+  }
+  .brand .kanji{
+    font-size:44px;
+    font-weight:900;
+    letter-spacing:0.08em;
+    color:var(--sumi);
+    margin:0;
+    line-height:1.2;
+  }
+  .brand .sub{
+    margin-top:6px;
+    font-size:13px;
+    letter-spacing:0.3em;
+    color:var(--sumi-soft);
+  }
+  .brand .rule-line{
+    width:56px;height:3px;background:var(--gold);
+    margin:18px auto 0;border-radius:2px;
+  }
+
+  .player-form{
+    margin-top:34px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .player-input{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:12px 16px;
+  }
+  .player-input .tag{
+    width:34px;height:34px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Noto Serif JP',serif;font-weight:700;font-size:15px;
+    color:#fff; flex-shrink:0;
+  }
+  .player-input.one .tag{ background:var(--p1); }
+  .player-input.two .tag{ background:var(--p2); }
+  .player-input input{
+    flex:1;border:none;outline:none;background:transparent;
+    font-family:'Noto Sans JP',sans-serif;font-size:16px;color:var(--sumi);
+  }
+  .player-input input::placeholder{ color:#B4AE9E; }
+
+  .rules-box{
+    margin-top:26px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px 18px;
+    font-size:12.5px;
+    line-height:1.9;
+    color:var(--sumi-soft);
+  }
+  .rules-box b{ color:var(--sumi); font-weight:700;}
+
+  .length-box{
+    margin-top:18px;
+  }
+  .length-box-title{
+    font-family:'Noto Serif JP',serif;
+    font-size:14px;
+    font-weight:700;
+    color:var(--sumi);
+  }
+  .length-box-sub{
+    font-size:11px;
+    color:var(--sumi-soft);
+    margin-top:2px;
+    margin-bottom:12px;
+  }
+  .length-grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .length-btn{
+    background:var(--card);
+    border:1.5px solid var(--line);
+    color:var(--sumi-soft);
+    font-size:14px;
+    font-weight:700;
+    font-family:'Noto Sans JP',sans-serif;
+    padding:10px 14px;
+    border-radius:999px;
+    transition:background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .length-btn:active{ transform:scale(0.95); }
+  .length-btn.active{
+    background:var(--sumi);
+    border-color:var(--sumi);
+    color:var(--paper);
+  }
+
+  .length-rule-note{
+    margin-top:10px;
+    font-size:11px;
+    letter-spacing:.05em;
+    color:var(--sumi-soft);
+    text-align:center;
+    display:none;
+  }
+
+  .spacer{ flex:1; }
+
+  button{
+    font-family:'Noto Sans JP',sans-serif;
+    cursor:pointer;
+    border:none;
+  }
+  .btn-main{
+    margin-top:26px;
+    background:var(--sumi);
+    color:var(--paper);
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    padding:16px;
+    border-radius:14px;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .btn-main:active{ transform:scale(0.97); }
+  .btn-main:disabled{ background:#C9C2AE; color:#fff; }
+
+  .err-msg{
+    margin-top:10px;
+    color:var(--danger);
+    font-size:12.5px;
+    text-align:center;
+    min-height:16px;
+  }
+
+  /* ---------- ゲーム画面 ---------- */
+  .turn-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .turn-badge{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 16px 8px 8px;
+    border-radius:999px;
+    transition:background .3s ease, color .3s ease;
+  }
+  .turn-badge .dot{
+    width:30px;height:30px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Noto Serif JP',serif;font-weight:700;color:#fff;font-size:13px;
+  }
+  .turn-badge .label{
+    font-size:11px;letter-spacing:.2em;color:var(--sumi-soft);
+  }
+  .turn-badge .name{
+    font-family:'Noto Serif JP',serif;
+    font-weight:700;font-size:16px;margin-top:1px;
+  }
+  .turn-badge.p1{ background:var(--p1-soft); }
+  .turn-badge.p1 .dot{ background:var(--p1); }
+  .turn-badge.p1 .name{ color:var(--p1); }
+  .turn-badge.p2{ background:var(--p2-soft); }
+  .turn-badge.p2 .dot{ background:var(--p2); }
+  .turn-badge.p2 .name{ color:var(--p2); }
+
+  .score-mini{
+    text-align:right;
+    font-size:11px;
+    color:var(--sumi-soft);
+    letter-spacing:.1em;
+  }
+  .score-mini b{
+    display:block;
+    font-family:'Noto Serif JP',serif;
+    font-size:22px;
+    color:var(--sumi);
+    line-height:1.1;
+  }
+
+  .timer-track{
+    margin-top:14px;
+    height:5px;
+    width:100%;
+    background:var(--paper-deep);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .timer-fill{
+    height:100%;
+    width:100%;
+    background:var(--ok);
+    border-radius:999px;
+    transition:width 1s linear, background .3s ease;
+  }
+
+  .chain-wrap{
+    flex:1;
+    margin-top:22px;
+    overflow-y:auto;
+    padding-right:2px;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 14px, black calc(100% - 6px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, black 14px, black calc(100% - 6px), transparent 100%);
+  }
+  .chain{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    padding:10px 0 4px;
+  }
+  .chain-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    position:relative;
+    padding:9px 2px;
+  }
+  .chain-item .thread{
+    position:absolute;
+    left:24px; top:-3px;
+    width:2px; height:14px;
+    background:var(--line);
+  }
+  .chain-item:first-child .thread{ display:none; }
+  .chain-item .avatar{
+    width:26px;height:26px;border-radius:50%;
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Noto Serif JP',serif;font-size:11px;font-weight:700;color:#fff;
+    z-index:1;
+  }
+  .chain-item.p1 .avatar{ background:var(--p1); }
+  .chain-item.p2 .avatar{ background:var(--p2); }
+  .chain-item .word-card{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 14px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+  }
+  .chain-item .word-text{
+    font-family:'Noto Serif JP',serif;
+    font-size:18px;
+    font-weight:500;
+    letter-spacing:.02em;
+  }
+  .chain-item .word-text .lead-char{
+    color:var(--gold);
+    font-weight:700;
+  }
+  .chain-item .word-kana{
+    font-size:11px;
+    color:#B4AE9E;
+    margin-left:8px;
+  }
+
+  .hint-row{
+    margin-top:6px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 4px 0;
+  }
+  .hint-label{
+    font-size:11px;
+    letter-spacing:.15em;
+    color:var(--sumi-soft);
+  }
+  .hint-char{
+    width:52px;height:52px;
+    border-radius:12px;
+    background:var(--sumi);
+    color:var(--paper);
+    font-family:'Noto Serif JP',serif;
+    font-size:26px;
+    font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+
+  .input-row{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+  }
+  .word-input{
+    flex:1;
+    border:1.5px solid var(--line);
+    background:var(--card);
+    border-radius:14px;
+    padding:14px 16px;
+    font-family:'Noto Serif JP',serif;
+    font-size:18px;
+    color:var(--sumi);
+    outline:none;
+  }
+  .word-input:focus{ border-color:var(--gold); }
+  .send-btn{
+    width:58px;
+    border-radius:14px;
+    background:var(--sumi);
+    color:var(--paper);
+    font-size:20px;
+    flex-shrink:0;
+  }
+  .send-btn:disabled{ background:#C9C2AE; }
+
+  /* ---------- 結果画面 ---------- */
+  #screen-result{
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
+  .result-badge{
+    width:104px;height:104px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Noto Serif JP',serif;font-weight:900;font-size:15px;
+    letter-spacing:.15em;
+    color:#fff;margin:0 auto 22px;
+  }
+  .result-title{
+    font-family:'Noto Serif JP',serif;
+    font-size:26px;font-weight:900;
+    margin:0 0 6px;
+  }
+  .result-reason{
+    font-size:13px;color:var(--sumi-soft);
+    margin-bottom:26px;
+  }
+  .result-stats{
+    display:flex;
+    gap:12px;
+    margin-bottom:30px;
+  }
+  .stat-card{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px 10px;
+  }
+  .stat-card .num{
+    font-family:'Noto Serif JP',serif;
+    font-size:26px;font-weight:700;
+  }
+  .stat-card .cap{
+    font-size:10.5px;
+    color:var(--sumi-soft);
+    letter-spacing:.1em;
+    margin-top:2px;
+  }
+  .last-word{
+    font-family:'Noto Serif JP',serif;
+    font-size:15px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 16px;
+    margin-bottom:26px;
+  }
+
+  .btn-row{ display:flex; gap:10px; width:100%; }
+  .btn-secondary{
+    flex:1;
+    background:transparent;
+    color:var(--sumi);
+    border:1.5px solid var(--sumi);
+    border-radius:14px;
+    padding:14px;
+    font-weight:700;
+    font-size:14px;
+  }
+  .btn-primary{
+    flex:1;
+    background:var(--sumi);
+    color:var(--paper);
+    border-radius:14px;
+    padding:14px;
+    font-weight:700;
+    font-size:14px;
+  }
+
+  ::-webkit-scrollbar{ width:0; height:0; }
+
+  @media (prefers-reduced-motion: reduce){
+    .screen{ animation:none; }
+    .timer-fill{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= タイトル画面 ================= -->
+  <section class="screen active" id="screen-title">
+    <div class="brand">
+      <p class="kanji">しりとり</p>
+      <div class="sub">SHIRITORI DUEL</div>
+      <div class="rule-line"></div>
+    </div>
+
+    <div class="rules-box">
+      <b>遊び方</b><br>
+      1台のスマホを交互に回して入力します。<br>
+      前の単語の最後の文字から始まる、ひらがな・カタカナの言葉を入力してください。<br>
+      すでに出た言葉は使えません。<br>
+      <b>「ん」で終わると負け</b>です。制限時間内に入力できなくても負けとなります。
+    </div>
+
+    <div class="length-box">
+      <div class="length-box-title">文字数のルール</div>
+      <div class="length-box-sub">複数選択できます・未選択なら文字数制限なし</div>
+      <div class="length-grid" id="length-grid">
+        <button type="button" class="length-btn" data-min="2" data-max="2">2文字</button>
+        <button type="button" class="length-btn" data-min="3" data-max="3">3文字</button>
+        <button type="button" class="length-btn" data-min="4" data-max="4">4文字</button>
+        <button type="button" class="length-btn" data-min="5" data-max="5">5文字</button>
+        <button type="button" class="length-btn" data-min="6" data-max="6">6文字</button>
+        <button type="button" class="length-btn" data-min="7" data-max="7">7文字</button>
+        <button type="button" class="length-btn" data-min="8" data-max="999">8文字以上</button>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="btn-main" id="btn-start">対戦をはじめる</button>
+  </section>
+
+  <!-- ================= ゲーム画面 ================= -->
+  <section class="screen" id="screen-game">
+    <div class="turn-bar">
+      <div class="turn-badge" id="turn-badge">
+        <div class="dot" id="turn-dot">P1</div>
+        <div>
+          <div class="label">いまの番</div>
+          <div class="name" id="turn-name">-</div>
+        </div>
+      </div>
+      <div class="score-mini">
+        <span>つながった数</span>
+        <b id="chain-count">0</b>
+      </div>
+    </div>
+
+    <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+    <div class="length-rule-note" id="length-rule-note"></div>
+
+    <div class="chain-wrap" id="chain-wrap">
+      <div class="chain" id="chain"></div>
+    </div>
+
+    <div class="hint-row">
+      <div class="hint-label">次はこの文字から</div>
+      <div class="hint-char" id="hint-char">?</div>
+    </div>
+
+    <div class="input-row">
+      <input class="word-input" id="word-input" type="text" placeholder="ひらがな・カタカナで入力" autocomplete="off" autocapitalize="off" autocorrect="off">
+      <button class="send-btn" id="btn-send">▶</button>
+    </div>
+    <div class="err-msg" id="err-msg"></div>
+  </section>
+
+  <!-- ================= 結果画面 ================= -->
+  <section class="screen" id="screen-result">
+    <div class="result-badge" id="result-badge">勝者</div>
+    <p class="result-title" id="result-title">-</p>
+    <p class="result-reason" id="result-reason">-</p>
+
+    <div class="result-stats">
+      <div class="stat-card">
+        <div class="num" id="stat-count">0</div>
+        <div class="cap">つながった言葉</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-longest">-</div>
+        <div class="cap">一番長い単語</div>
+      </div>
+    </div>
+
+    <div class="last-word" id="last-word-box">最後の言葉：-</div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="btn-title">タイトルへ</button>
+      <button class="btn-primary" id="btn-replay">もう一度</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- 状態 ----------
+  const TIME_LIMIT = 20; // 秒
+  let players = [
+    { name:"Player1", short:"P1", cls:"p1", color:"--p1" },
+    { name:"Player2", short:"P2", cls:"p2", color:"--p2" }
+  ];
+  let turn = 0;          // 0 or 1
+  let usedWords = new Set();  // 正規化(ひらがな)された単語
+  let chainData = [];    // {word, kana, playerIdx}
+  let timerId = null;
+  let timeLeft = TIME_LIMIT;
+  let allowedRanges = []; // 文字数ルール(空なら制限なし)
+
+  // ---------- 要素 ----------
+  const screens = {
+    title: document.getElementById('screen-title'),
+    game: document.getElementById('screen-game'),
+    result: document.getElementById('screen-result'),
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(s=>s.classList.remove('active'));
+    screens[name].classList.add('active');
+  }
+
+  const el = {
+    btnStart: document.getElementById('btn-start'),
+    lengthGrid: document.getElementById('length-grid'),
+
+    turnBadge: document.getElementById('turn-badge'),
+    turnDot: document.getElementById('turn-dot'),
+    turnName: document.getElementById('turn-name'),
+    chainCount: document.getElementById('chain-count'),
+    timerFill: document.getElementById('timer-fill'),
+    lengthRuleNote: document.getElementById('length-rule-note'),
+    chain: document.getElementById('chain'),
+    chainWrap: document.getElementById('chain-wrap'),
+    hintChar: document.getElementById('hint-char'),
+    wordInput: document.getElementById('word-input'),
+    btnSend: document.getElementById('btn-send'),
+    errMsg: document.getElementById('err-msg'),
+
+    resultBadge: document.getElementById('result-badge'),
+    resultTitle: document.getElementById('result-title'),
+    resultReason: document.getElementById('result-reason'),
+    statCount: document.getElementById('stat-count'),
+    statLongest: document.getElementById('stat-longest'),
+    lastWordBox: document.getElementById('last-word-box'),
+    btnTitle: document.getElementById('btn-title'),
+    btnReplay: document.getElementById('btn-replay'),
+  };
+
+  // ---------- 文字処理ユーティリティ ----------
+  const KATA_TO_HIRA_OFFSET = 0x60;
+  function toHiragana(str){
+    return str.replace(/[\u30A1-\u30F6]/g, ch =>
+      String.fromCharCode(ch.charCodeAt(0) - KATA_TO_HIRA_OFFSET)
+    ).replace(/ヴ/g, 'ゔ');
+  }
+
+  const VALID_KANA_RE = /^[\u3041-\u3096\u30A1-\u30FA\u30FC\u3099\u309Aー]+$/;
+
+  const SMALL_TO_BIG = {
+    'ゃ':'や','ゅ':'ゆ','ょ':'よ',
+    'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お',
+    'っ':'つ'
+  };
+
+  // しりとり判定用の「最後の文字」を取得(ひらがな化した文字列に対して)
+  function getEffectiveLastChar(hiraWord){
+    let chars = Array.from(hiraWord);
+    let i = chars.length - 1;
+    let c = chars[i];
+    if (c === 'ー'){
+      // 長音: ひとつ前の文字を採用(簡易ルール)
+      if (i - 1 >= 0) c = chars[i-1];
+    }
+    if (SMALL_TO_BIG[c]) c = SMALL_TO_BIG[c];
+    return c;
+  }
+  // 単語の先頭文字(小さい文字は大きい文字に変換して判定に使う)
+  function getEffectiveFirstChar(hiraWord){
+    let c = Array.from(hiraWord)[0];
+    if (SMALL_TO_BIG[c]) c = SMALL_TO_BIG[c];
+    return c;
+  }
+
+  // ---------- 文字数ルール ----------
+  el.lengthGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.length-btn');
+    if (!btn) return;
+    btn.classList.toggle('active');
+  });
+
+  function getAllowedRanges(){
+    return Array.from(el.lengthGrid.querySelectorAll('.length-btn.active')).map(btn => ({
+      min: parseInt(btn.dataset.min, 10),
+      max: parseInt(btn.dataset.max, 10),
+      label: btn.textContent
+    }));
+  }
+
+  function isLengthAllowed(len){
+    if (allowedRanges.length === 0) return true; // 未選択=制限なし
+    return allowedRanges.some(r => len >= r.min && len <= r.max);
+  }
+
+  function describeAllowedRanges(){
+    return allowedRanges.map(r => r.label).join('・');
+  }
+
+  // ---------- タイトル → ゲーム開始 ----------
+  el.btnStart.addEventListener('click', () => {
+    startGame();
+  });
+
+  function startGame(){
+    turn = 0;
+    usedWords = new Set();
+    chainData = [];
+    el.chain.innerHTML = '';
+    el.chainCount.textContent = '0';
+    el.errMsg.textContent = '';
+    el.wordInput.value = '';
+    allowedRanges = getAllowedRanges();
+    if (allowedRanges.length > 0){
+      el.lengthRuleNote.textContent = `有効な文字数: ${describeAllowedRanges()}`;
+      el.lengthRuleNote.style.display = 'block';
+    } else {
+      el.lengthRuleNote.style.display = 'none';
+    }
+    updateTurnUI();
+    updateHint(null);
+    showScreen('game');
+    startTimer();
+    setTimeout(()=> el.wordInput.focus(), 250);
+  }
+
+  function updateTurnUI(){
+    const p = players[turn];
+    el.turnBadge.className = 'turn-badge ' + p.cls;
+    el.turnDot.textContent = p.short;
+    el.turnName.textContent = p.name;
+  }
+
+  function updateHint(lastHira){
+    if (!lastHira){
+      el.hintChar.textContent = '任';
+      el.hintChar.parentElement.querySelector('.hint-label').textContent = '最初の言葉を自由に入力';
+    } else {
+      el.hintChar.parentElement.querySelector('.hint-label').textContent = '次はこの文字から';
+      el.hintChar.textContent = getEffectiveLastChar(lastHira);
+    }
+  }
+
+  // ---------- タイマー ----------
+  function startTimer(){
+    clearInterval(timerId);
+    timeLeft = TIME_LIMIT;
+    renderTimer();
+    timerId = setInterval(tickTimer, 1000);
+  }
+  function tickTimer(){
+    timeLeft -= 1;
+    renderTimer();
+    if (timeLeft <= 0){
+      clearInterval(timerId);
+      endGame(turn, 'timeout');
+    }
+  }
+  function renderTimer(){
+    const pct = Math.max(0, (timeLeft / TIME_LIMIT) * 100);
+    el.timerFill.style.width = pct + '%';
+    if (pct <= 25) el.timerFill.style.background = 'var(--danger)';
+    else if (pct <= 55) el.timerFill.style.background = '#C79A3B';
+    else el.timerFill.style.background = 'var(--ok)';
+  }
+
+  // ---------- 送信処理 ----------
+  el.btnSend.addEventListener('click', submitWord);
+  el.wordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitWord();
+  });
+
+  function submitWord(){
+    const raw = el.wordInput.value.trim();
+    el.errMsg.textContent = '';
+
+    if (!raw){
+      showErr('言葉を入力してください');
+      return;
+    }
+    if (!VALID_KANA_RE.test(raw)){
+      showErr('ひらがな・カタカナで入力してください');
+      return;
+    }
+
+    const hira = toHiragana(raw).normalize('NFC');
+
+    if (Array.from(hira).length < 1){
+      showErr('言葉を入力してください');
+      return;
+    }
+
+    // 先頭文字チェック(2語目以降)
+    if (chainData.length > 0){
+      const prevHira = chainData[chainData.length - 1].kana;
+      const need = getEffectiveLastChar(prevHira);
+      const got = getEffectiveFirstChar(hira);
+      if (need !== got){
+        showErr(`「${need}」から始まる言葉を入力してください`);
+        return;
+      }
+    }
+
+    // 重複チェック
+    if (usedWords.has(hira)){
+      showErr('その言葉はすでに使われています');
+      return;
+    }
+
+    // 文字数ルールのチェック
+    const len = Array.from(hira).length;
+    if (!isLengthAllowed(len)){
+      showErr(`${describeAllowedRanges()}の言葉を入力してください`);
+      return;
+    }
+
+    // 採用
+    clearInterval(timerId);
+    usedWords.add(hira);
+    chainData.push({ word: raw, kana: hira, playerIdx: turn });
+    appendChainCard(raw, hira, turn, chainData.length === 1);
+    el.chainCount.textContent = String(chainData.length);
+    el.wordInput.value = '';
+
+    // 「ん」で終わったら負け
+    const lastChar = Array.from(hira).slice(-1)[0];
+    if (lastChar === 'ん'){
+      endGame(turn, 'n_ending', raw);
+      return;
+    }
+
+    updateHint(hira);
+    nextTurn();
+  }
+
+  function showErr(msg){
+    el.errMsg.textContent = msg;
+    el.wordInput.focus();
+  }
+
+  function appendChainCard(raw, hira, playerIdx, isFirst){
+    const p = players[playerIdx];
+    const item = document.createElement('div');
+    item.className = 'chain-item ' + p.cls;
+
+    const leadIdx = isFirst ? -1 : 0; // 先頭文字を強調
+    const chars = Array.from(raw);
+    let wordHtml = chars.map((ch, i) => i === leadIdx ? `<span class="lead-char">${ch}</span>` : ch).join('');
+
+    item.innerHTML = `
+      <div class="thread"></div>
+      <div class="avatar">${p.short}</div>
+      <div class="word-card">
+        <span class="word-text">${wordHtml}</span>
+        <span class="word-kana">${p.name}</span>
+      </div>
+    `;
+    el.chain.appendChild(item);
+    el.chainWrap.scrollTop = el.chainWrap.scrollHeight;
+  }
+
+  // ---------- 手番交代 ----------
+  function nextTurn(){
+    turn = 1 - turn;
+    updateTurnUI();
+    startTimer();
+    el.wordInput.focus();
+  }
+
+  // ---------- 終了処理 ----------
+  function endGame(loserIdx, reason, badWord){
+    clearInterval(timerId);
+    const loser = players[loserIdx];
+    const winner = players[1 - loserIdx];
+
+    el.resultBadge.style.background = `var(${winner.color})`;
+    el.resultBadge.textContent = '勝者';
+    el.resultTitle.textContent = `${winner.name} の勝ち！`;
+
+    if (reason === 'n_ending'){
+      el.resultReason.textContent = `${loser.name} が「ん」で終わる言葉を使いました`;
+    } else if (reason === 'timeout'){
+      el.resultReason.textContent = `${loser.name} が制限時間内に入力できませんでした`;
+    } else {
+      el.resultReason.textContent = '';
+    }
+
+    el.statCount.textContent = String(chainData.length);
+    if (chainData.length > 0){
+      const longest = chainData.reduce((a,b) => Array.from(b.word).length > Array.from(a.word).length ? b : a);
+      el.statLongest.textContent = longest.word;
+      const last = chainData[chainData.length - 1];
+      el.lastWordBox.textContent = `最後の言葉：${last.word}${badWord ? '' : ''}`;
+    } else {
+      el.statLongest.textContent = '-';
+      el.lastWordBox.textContent = '最後の言葉：-';
+    }
+
+    showScreen('result');
+  }
+
+  el.btnReplay.addEventListener('click', () => {
+    startGame();
+  });
+  el.btnTitle.addEventListener('click', () => {
+    clearInterval(timerId);
+    showScreen('title');
+  });
+
+})();
+</script>
+</body>
+</html>
