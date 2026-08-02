@@ -329,7 +329,7 @@
 
   .chain-wrap{
     flex:1;
-    margin-top:10px;
+    margin-top:14px;
     overflow-y:auto;
     padding-right:2px;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 14px, black calc(100% - 6px), transparent 100%);
@@ -391,7 +391,7 @@
   }
 
   .hint-row{
-    margin-top:2px;
+    margin-top:6px;
     display:flex;
     align-items:center;
     gap:12px;
@@ -596,10 +596,6 @@
     </div>
     <div class="bypass-note" id="bypass-note">次の1回は文字数制限なし</div>
 
-    <div class="chain-wrap" id="chain-wrap">
-      <div class="chain" id="chain"></div>
-    </div>
-
     <div class="hint-row">
       <div class="hint-label">次はこの文字から</div>
       <div class="hint-char" id="hint-char">?</div>
@@ -610,6 +606,10 @@
       <button class="send-btn" id="btn-send">▶</button>
     </div>
     <div class="err-msg" id="err-msg"></div>
+
+    <div class="chain-wrap" id="chain-wrap">
+      <div class="chain" id="chain"></div>
+    </div>
   </section>
 
   <!-- ================= 結果画面 ================= -->
