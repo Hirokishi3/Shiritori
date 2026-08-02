@@ -173,7 +173,7 @@
     gap:8px;
   }
   .card-btn{
-    flex:1;
+    flex:0.7;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -327,69 +327,6 @@
     transition:width 1s linear, background .3s ease;
   }
 
-  .chain-wrap{
-    flex:1;
-    margin-top:14px;
-    overflow-y:auto;
-    padding-right:2px;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 14px, black calc(100% - 6px), transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0, black 14px, black calc(100% - 6px), transparent 100%);
-  }
-  .chain{
-    display:flex;
-    flex-direction:column;
-    gap:0;
-    padding:10px 0 4px;
-  }
-  .chain-item{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    position:relative;
-    padding:7px 2px;
-  }
-  .chain-item .thread{
-    position:absolute;
-    left:24px; top:-3px;
-    width:2px; height:14px;
-    background:var(--line);
-  }
-  .chain-item:first-child .thread{ display:none; }
-  .chain-item .avatar{
-    width:26px;height:26px;border-radius:50%;
-    flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Noto Serif JP',serif;font-size:11px;font-weight:700;color:#fff;
-    z-index:1;
-  }
-  .chain-item.p1 .avatar{ background:var(--p1); }
-  .chain-item.p2 .avatar{ background:var(--p2); }
-  .chain-item .word-card{
-    flex:1;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:10px 14px;
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-  }
-  .chain-item .word-text{
-    font-family:'Noto Serif JP',serif;
-    font-size:18px;
-    font-weight:500;
-    letter-spacing:.02em;
-  }
-  .chain-item .word-text .lead-char{
-    color:var(--gold);
-    font-weight:700;
-  }
-  .chain-item .word-kana{
-    font-size:11px;
-    color:#B4AE9E;
-    margin-left:8px;
-  }
-
   .hint-row{
     margin-top:6px;
     display:flex;
@@ -420,7 +357,7 @@
     gap:10px;
   }
   .word-input{
-    flex:1;
+    flex:0 0 66%;
     border:1.5px solid var(--line);
     background:var(--card);
     border-radius:14px;
@@ -606,10 +543,6 @@
       <button class="send-btn" id="btn-send">▶</button>
     </div>
     <div class="err-msg" id="err-msg"></div>
-
-    <div class="chain-wrap" id="chain-wrap">
-      <div class="chain" id="chain"></div>
-    </div>
   </section>
 
   <!-- ================= 結果画面 ================= -->
@@ -682,8 +615,6 @@
     cardTime: document.getElementById('card-time'),
     cardLength: document.getElementById('card-length'),
     bypassNote: document.getElementById('bypass-note'),
-    chain: document.getElementById('chain'),
-    chainWrap: document.getElementById('chain-wrap'),
     hintChar: document.getElementById('hint-char'),
     wordInput: document.getElementById('word-input'),
     btnSend: document.getElementById('btn-send'),
@@ -794,7 +725,6 @@
     turn = 0;
     usedWords = new Set();
     chainData = [];
-    el.chain.innerHTML = '';
     el.chainCount.textContent = '0';
     el.errMsg.textContent = '';
     el.wordInput.value = '';
@@ -920,7 +850,6 @@
     clearInterval(timerId);
     usedWords.add(hira);
     chainData.push({ word: raw, kana: hira, playerIdx: turn });
-    appendChainCard(raw, hira, turn, chainData.length === 1);
     el.chainCount.textContent = String(chainData.length);
     el.wordInput.value = '';
     lengthBypassActive = false;
@@ -939,27 +868,6 @@
   function showErr(msg){
     el.errMsg.textContent = msg;
     el.wordInput.focus();
-  }
-
-  function appendChainCard(raw, hira, playerIdx, isFirst){
-    const p = players[playerIdx];
-    const item = document.createElement('div');
-    item.className = 'chain-item ' + p.cls;
-
-    const leadIdx = isFirst ? -1 : 0; // 先頭文字を強調
-    const chars = Array.from(raw);
-    let wordHtml = chars.map((ch, i) => i === leadIdx ? `<span class="lead-char">${ch}</span>` : ch).join('');
-
-    item.innerHTML = `
-      <div class="thread"></div>
-      <div class="avatar">${p.short}</div>
-      <div class="word-card">
-        <span class="word-text">${wordHtml}</span>
-        <span class="word-kana">${p.name}</span>
-      </div>
-    `;
-    el.chain.appendChild(item);
-    el.chainWrap.scrollTop = el.chainWrap.scrollHeight;
   }
 
   // ---------- 手番交代 ----------
